@@ -70,6 +70,14 @@ export function resolveModel(
     );
     if (inlineMatch) {
       const normalized = normalizeModelCompat(inlineMatch as Model<Api>);
+      // Apply baseUrl override if configured (supports aliases like aws-bedrock -> amazon-bedrock)
+      const providerCfg = Object.entries(providers).find(
+        ([key]) => normalizeProviderId(key) === normalizedProvider,
+      )?.[1];
+      const configuredBaseUrl = providerCfg?.baseUrl;
+      if (configuredBaseUrl) {
+        return { model: { ...normalized, baseUrl: configuredBaseUrl }, authStorage, modelRegistry };
+      }
       return {
         model: normalized,
         authStorage,
@@ -80,6 +88,18 @@ export function resolveModel(
     // Otherwise, configured providers can default to a generic API and break specific transports.
     const forwardCompat = resolveForwardCompatModel(provider, modelId, modelRegistry);
     if (forwardCompat) {
+      // Use normalized provider key to match config (supports aliases like aws-bedrock -> amazon-bedrock)
+      const providerCfg = Object.entries(providers).find(
+        ([key]) => normalizeProviderId(key) === normalizedProvider,
+      )?.[1];
+      const configuredBaseUrl = providerCfg?.baseUrl;
+      if (configuredBaseUrl) {
+        return {
+          model: { ...forwardCompat, baseUrl: configuredBaseUrl },
+          authStorage,
+          modelRegistry,
+        };
+      }
       return { model: forwardCompat, authStorage, modelRegistry };
     }
     // OpenRouter is a pass-through proxy — any model ID available on OpenRouter
