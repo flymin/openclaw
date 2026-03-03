@@ -100,7 +100,9 @@ export function resolveModel(
       } as Model<Api>);
       return { model: fallbackModel, authStorage, modelRegistry };
     }
-    const providerCfg = providers[provider];
+    const providerCfg = Object.entries(providers).find(
+      ([key]) => normalizeProviderId(key) === normalizedProvider,
+    )?.[1];
     if (providerCfg || modelId.startsWith("mock-")) {
       const configuredModel = providerCfg?.models?.find((candidate) => candidate.id === modelId);
       const fallbackModel: Model<Api> = normalizeModelCompat({
